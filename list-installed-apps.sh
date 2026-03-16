@@ -1,115 +1,328 @@
 #!/bin/bash
 
+set -euo pipefail
+
 INCLUDE_FORMULAE=false
 EXPORT_CSV=false
 EXPORT_MD=false
+EXPORT_JSON=false
+OUTPUT_DIR="."
 
-# === Parse Args ===
-for arg in "$@"; do
-  case $arg in
-    --with-formulae)
-      INCLUDE_FORMULAE=true
-      ;;
-    --export-csv)
-      EXPORT_CSV=true
-      ;;
-    --export-md)
-      EXPORT_MD=true
-      ;;
+data_file=""
+known_apps_file=""
+cleanup_paths=""
+
+usage() {
+  cat <<'EOF'
+Usage: ./list-installed-apps.sh [options]
+
+Options:
+  --with-formulae   Include Homebrew formulae in the output.
+  --export-csv      Export the collected inventory to installed_apps.csv.
+  --export-md       Export the collected inventory to installed_apps.md.
+  --export-json     Export the collected inventory to installed_apps.json.
+  --output-dir DIR  Write export files into DIR.
+  --help            Show this help message.
+EOF
+}
+
+cleanup() {
+  if [[ -n "${cleanup_paths}" ]]; then
+    # shellcheck disable=SC2086
+    rm -f ${cleanup_paths}
+  fi
+}
+
+trap cleanup EXIT
+
+append_cleanup_path() {
+  if [[ -z "${cleanup_paths}" ]]; then
+    cleanup_paths="$1"
+  else
+    cleanup_paths="${cleanup_paths} $1"
+  fi
+}
+
+normalize_name() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[[:space:]]\+/ /g; s/^[[:space:]]*//; s/[[:space:]]*$//'
+}
+
+section_title() {
+  case "$1" in
+    formulae) printf '%s' "Homebrew (Formulae) Packages" ;;
+    casks) printf '%s' "Homebrew (Cask) Apps" ;;
+    mas) printf '%s' "Mac App Store Apps" ;;
+    manual) printf '%s' "Manually Installed Apps" ;;
+    *) printf '%s' "$1" ;;
   esac
-done
+}
 
-# Ensure required tools
-if ! command -v mas &> /dev/null; then
-    echo "Installing 'mas' via Homebrew..."
-    brew install mas
-fi
+csv_escape() {
+  printf '%s' "$1" | sed 's/"/""/g'
+}
 
-if ! command -v jq &> /dev/null; then
-    echo "Installing 'jq' via Homebrew..."
-    brew install jq
-fi
+md_escape() {
+  printf '%s' "$1" | sed 's/|/\\|/g'
+}
 
-# Temp file for export
-output=$(mktemp)
+json_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
 
-# === Homebrew Formulae (optional) ===
-if $INCLUDE_FORMULAE; then
-    echo "=== Homebrew (Formula) Packages ===" | tee -a "$output"
-    brew list --formula --versions | while read line; do
-        name=$(echo "$line" | awk '{print $1}')
-        version=$(echo "$line" | awk '{$1=""; print $0}' | xargs)
-        printf "%-30s v%s\n" "$name" "$version" | tee -a "$output"
-    done
-    echo "" | tee -a "$output"
-fi
+add_record() {
+  printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$data_file"
+}
 
-# === Homebrew Casks ===
-echo "=== Homebrew (Cask) Apps ===" | tee -a "$output"
-brew list --cask --versions | while read line; do
-    name=$(echo "$line" | awk '{print $1}')
-    version=$(echo "$line" | awk '{$1=""; print $0}' | xargs)
-    printf "%-30s v%s\n" "$name" "$version" | tee -a "$output"
-done
-echo "" | tee -a "$output"
+add_known_app() {
+  local normalized_name
+  normalized_name=$(normalize_name "$1")
+  if [[ -n "$normalized_name" ]]; then
+    printf '%s\n' "$normalized_name" >> "$known_apps_file"
+  fi
+}
 
-# === Mac App Store Apps ===
-echo "=== Mac App Store Apps ===" | tee -a "$output"
-mas list | while read line; do
-    appname=$(echo "$line" | cut -f2)
-    version=$(echo "$line" | grep -oE '\([^\)]+\)' | tr -d '()')
-    printf "%-30s v%s\n" "$appname" "$version" | tee -a "$output"
-done
-echo "" | tee -a "$output"
+have_command() {
+  command -v "$1" >/dev/null 2>&1
+}
 
-# === Manually Installed Apps ===
-echo "=== Manually Installed Apps ===" | tee -a "$output"
-known_apps=$( (brew list --cask --versions | awk '{print $1}'; mas list | awk '{print $2}') | tr '[:upper:]' '[:lower:]' )
+collect_formulae() {
+  local line name version
 
-manual_apps=$(find /Applications ~/Applications -maxdepth 1 -name "*.app" -exec basename {} .app \; 2>/dev/null | sort -f | uniq)
-echo "$manual_apps" | while read app; do
-    app_lc=$(echo "$app" | tr '[:upper:]' '[:lower:]')
-    if ! echo "$known_apps" | grep -qx "$app_lc"; then
-        echo "$app" | tee -a "$output"
+  if ! have_command brew; then
+    echo "Warning: skipping Homebrew formulae because 'brew' is not installed." >&2
+    return
+  fi
+
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    name=$(printf '%s\n' "$line" | awk '{print $1}')
+    version=$(printf '%s\n' "$line" | awk '{$1=""; sub(/^ /, ""); print}')
+    add_record "formulae" "$name" "$version"
+  done < <(brew list --formula --versions)
+}
+
+collect_casks() {
+  local line name version
+
+  if ! have_command brew; then
+    echo "Warning: skipping Homebrew casks because 'brew' is not installed." >&2
+    return
+  fi
+
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    name=$(printf '%s\n' "$line" | awk '{print $1}')
+    version=$(printf '%s\n' "$line" | awk '{$1=""; sub(/^ /, ""); print}')
+    add_record "casks" "$name" "$version"
+    add_known_app "$name"
+  done < <(brew list --cask --versions)
+}
+
+collect_mas_apps() {
+  local line app_name version
+
+  if ! have_command mas; then
+    echo "Warning: skipping Mac App Store apps because 'mas' is not installed." >&2
+    return
+  fi
+
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+
+    if [[ "$line" =~ ^[[:space:]]*[0-9]+[[:space:]]+(.+)[[:space:]]+\(([^()]*)\)[[:space:]]*$ ]]; then
+      app_name=${BASH_REMATCH[1]}
+      version=${BASH_REMATCH[2]}
+    else
+      app_name="$line"
+      version=""
     fi
-done
 
-# === Export to CSV ===
+    add_record "mas" "$app_name" "$version"
+    add_known_app "$app_name"
+  done < <(mas list)
+}
+
+collect_manual_apps() {
+  local app_path app_name normalized_name
+  local -a search_paths
+
+  search_paths=()
+  [[ -d "/Applications" ]] && search_paths+=("/Applications")
+  [[ -d "${HOME}/Applications" ]] && search_paths+=("${HOME}/Applications")
+
+  if [[ ${#search_paths[@]} -eq 0 ]]; then
+    echo "Warning: skipping manual applications because no Applications directories were found." >&2
+    return
+  fi
+
+  while IFS= read -r app_path; do
+    [[ -z "$app_path" ]] && continue
+    app_name=$(basename "$app_path" .app)
+    normalized_name=$(normalize_name "$app_name")
+
+    if ! grep -Fqx "$normalized_name" "$known_apps_file"; then
+      add_record "manual" "$app_name" ""
+    fi
+  done < <(find "${search_paths[@]}" -maxdepth 1 -type d -name "*.app" -print 2>/dev/null | sort -f | uniq)
+}
+
+print_section() {
+  local section="$1"
+  local title
+
+  title=$(section_title "$section")
+  echo "=== ${title} ==="
+
+  awk -F '\t' -v current="$section" '
+    $1 == current {
+      if (length($3) > 0) {
+        printf "%-30s v%s\n", $2, $3
+      } else {
+        print $2
+      }
+    }
+  ' "$data_file"
+
+  echo
+}
+
+export_csv() {
+  local csv_file="$OUTPUT_DIR/installed_apps.csv"
+  local section_title_value escaped_section escaped_app escaped_version
+
+  printf 'Type,App,Version\n' > "$csv_file"
+
+  while IFS=$'\t' read -r section app version; do
+    section_title_value=$(section_title "$section")
+    escaped_section=$(csv_escape "$section_title_value")
+    escaped_app=$(csv_escape "$app")
+    escaped_version=$(csv_escape "$version")
+    printf '"%s","%s","%s"\n' "$escaped_section" "$escaped_app" "$escaped_version" >> "$csv_file"
+  done < "$data_file"
+
+  echo "Exported CSV to $csv_file"
+}
+
+export_markdown() {
+  local md_file="$OUTPUT_DIR/installed_apps.md"
+  local previous_section="" title escaped_app escaped_version
+
+  printf '# Installed Applications\n' > "$md_file"
+
+  while IFS=$'\t' read -r section app version; do
+    if [[ "$section" != "$previous_section" ]]; then
+      title=$(section_title "$section")
+      printf '\n## %s\n| App | Version |\n|------|---------|\n' "$title" >> "$md_file"
+      previous_section="$section"
+    fi
+
+    escaped_app=$(md_escape "$app")
+    escaped_version=$(md_escape "$version")
+    printf '| %s | %s |\n' "$escaped_app" "$escaped_version" >> "$md_file"
+  done < "$data_file"
+
+  echo "Exported Markdown to $md_file"
+}
+
+export_json() {
+  local json_file="$OUTPUT_DIR/installed_apps.json"
+  local first=true escaped_section escaped_app escaped_version
+
+  printf '[\n' > "$json_file"
+
+  while IFS=$'\t' read -r section app version; do
+    escaped_section=$(json_escape "$(section_title "$section")")
+    escaped_app=$(json_escape "$app")
+    escaped_version=$(json_escape "$version")
+
+    if [[ "$first" == true ]]; then
+      first=false
+    else
+      printf ',\n' >> "$json_file"
+    fi
+
+    printf '  {"type":"%s","app":"%s","version":"%s"}' \
+      "$escaped_section" "$escaped_app" "$escaped_version" >> "$json_file"
+  done < "$data_file"
+
+  printf '\n]\n' >> "$json_file"
+  echo "Exported JSON to $json_file"
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --with-formulae)
+        INCLUDE_FORMULAE=true
+        ;;
+      --export-csv)
+        EXPORT_CSV=true
+        ;;
+      --export-md)
+        EXPORT_MD=true
+        ;;
+      --export-json)
+        EXPORT_JSON=true
+        ;;
+      --output-dir)
+        shift
+        if [[ $# -eq 0 ]]; then
+          echo "Error: --output-dir requires a directory path." >&2
+          exit 1
+        fi
+        OUTPUT_DIR="$1"
+        ;;
+      --help)
+        usage
+        exit 0
+        ;;
+      *)
+        echo "Error: unknown option '$1'." >&2
+        usage >&2
+        exit 1
+        ;;
+    esac
+    shift
+  done
+}
+
+parse_args "$@"
+
+if [[ ! -d "$OUTPUT_DIR" ]]; then
+  echo "Error: output directory '$OUTPUT_DIR' does not exist." >&2
+  exit 1
+fi
+
+data_file=$(mktemp)
+known_apps_file=$(mktemp)
+append_cleanup_path "$data_file"
+append_cleanup_path "$known_apps_file"
+
+if $INCLUDE_FORMULAE; then
+  collect_formulae
+fi
+collect_casks
+collect_mas_apps
+collect_manual_apps
+
+sort -t $'\t' -k1,1 -k2,2f "$data_file" -o "$data_file"
+sort -fu "$known_apps_file" -o "$known_apps_file"
+
+if $INCLUDE_FORMULAE; then
+  print_section "formulae"
+fi
+print_section "casks"
+print_section "mas"
+print_section "manual"
+
 if $EXPORT_CSV; then
-    csv_file="installed_apps.csv"
-    echo "Type,App,Version" > "$csv_file"
-    current_section=""
-    while IFS= read -r line; do
-        if [[ "$line" == ===* ]]; then
-            current_section=$(echo "$line" | sed 's/=== //; s/ ===//')
-        elif [[ -n "$line" ]]; then
-            app=$(echo "$line" | sed 's/  */ /g' | cut -d ' ' -f1-1)
-            version=$(echo "$line" | grep -oE 'v[0-9].*$' || echo "")
-            echo "\"$current_section\",\"$app\",\"$version\"" >> "$csv_file"
-        fi
-    done < "$output"
-    echo "✅ Exported CSV to $csv_file"
+  export_csv
 fi
 
-# === Export to Markdown ===
 if $EXPORT_MD; then
-    md_file="installed_apps.md"
-    echo "# Installed Applications" > "$md_file"
-    current_section=""
-    while IFS= read -r line; do
-        if [[ "$line" == ===* ]]; then
-            current_section=$(echo "$line" | sed 's/=== //; s/ ===//')
-            echo -e "\n## $current_section" >> "$md_file"
-            echo "| App | Version |" >> "$md_file"
-            echo "|------|---------|" >> "$md_file"
-        elif [[ -n "$line" ]]; then
-            app=$(echo "$line" | sed 's/  */ /g' | cut -d ' ' -f1-1)
-            version=$(echo "$line" | grep -oE 'v[0-9].*$' || echo "")
-            echo "| $app | $version |" >> "$md_file"
-        fi
-    done < "$output"
-    echo "✅ Exported Markdown to $md_file"
+  export_markdown
 fi
 
-# Cleanup
-rm "$output"
+if $EXPORT_JSON; then
+  export_json
+fi
