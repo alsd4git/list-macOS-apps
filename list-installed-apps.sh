@@ -118,6 +118,34 @@ collect_casks() {
   done < <(brew list --cask --versions)
 }
 
+collect_cask_apps() {
+  local cask_token cask_info app_name
+
+  if ! have_command brew; then
+    echo "Warning: skipping Homebrew cask app artifacts because 'brew' is not installed." >&2
+    return
+  fi
+
+  if ! have_command jq; then
+    echo "Warning: skipping Homebrew cask app artifacts because 'jq' is not installed." >&2
+    return
+  fi
+
+  while IFS= read -r cask_token; do
+    [[ -z "$cask_token" ]] && continue
+
+    if ! cask_info=$(brew info --json=v2 --cask "$cask_token" 2>/dev/null); then
+      continue
+    fi
+
+    while IFS= read -r app_name; do
+      [[ -z "$app_name" ]] && continue
+      app_name=${app_name%.app}
+      add_known_app "$app_name"
+    done < <(printf '%s\n' "$cask_info" | jq -r '.casks[]?.artifacts[]? | select(has("app")) | .app[]?')
+  done < <(brew list --cask)
+}
+
 collect_mas_apps() {
   local line app_name version
 
@@ -302,6 +330,7 @@ if $INCLUDE_FORMULAE; then
   collect_formulae
 fi
 collect_casks
+collect_cask_apps
 collect_mas_apps
 collect_manual_apps
 

@@ -22,12 +22,45 @@ cat > "$MOCK_BIN/brew" <<'EOF'
 #!/bin/bash
 set -euo pipefail
 
-if [[ "$1" == "list" && "$2" == "--cask" && "$3" == "--versions" ]]; then
+if [[ "$1" == "list" && "$2" == "--cask" && "${3-}" == "--versions" ]]; then
   cat <<'OUT'
+github 3.5.6
 visual-studio-code 1.101.0
 google-chrome 134.0.6998.89
 OUT
   exit 0
+fi
+
+if [[ "$1" == "list" && "$2" == "--cask" ]]; then
+  cat <<'OUT'
+github
+visual-studio-code
+google-chrome
+OUT
+  exit 0
+fi
+
+if [[ "$1" == "info" && "$2" == "--json=v2" && "$3" == "--cask" ]]; then
+  case "$4" in
+    github)
+      cat <<'OUT'
+{"casks":[{"token":"github","artifacts":[{"app":["GitHub Desktop.app"]}]}]}
+OUT
+      exit 0
+      ;;
+    visual-studio-code)
+      cat <<'OUT'
+{"casks":[{"token":"visual-studio-code","artifacts":[{"app":["Visual Studio Code.app"]}]}]}
+OUT
+      exit 0
+      ;;
+    google-chrome)
+      cat <<'OUT'
+{"casks":[{"token":"google-chrome","artifacts":[{"app":["Google Chrome.app"]}]}]}
+OUT
+      exit 0
+      ;;
+  esac
 fi
 
 if [[ "$1" == "list" && "$2" == "--formula" && "$3" == "--versions" ]]; then
@@ -61,6 +94,8 @@ EOF
 chmod +x "$MOCK_BIN/brew" "$MOCK_BIN/mas"
 
 touch "$APPLICATIONS_DIR/Visual Studio Code.app"
+touch "$APPLICATIONS_DIR/GitHub Desktop.app"
+touch "$APPLICATIONS_DIR/Google Chrome.app"
 touch "$APPLICATIONS_DIR/Xcode.app"
 touch "$APPLICATIONS_DIR/OrbStack.app"
 touch "$HOME_DIR/Applications/Folder Quick Look.app"
@@ -111,6 +146,9 @@ assert_contains "$OUTPUT_FILE" "Folder Quick Look              v1.6"
 assert_contains "$OUTPUT_FILE" "OrbStack"
 assert_contains "$OUTPUT_FILE" "T3 Code (Alpha)"
 assert_not_contains "$OUTPUT_FILE" "6753110395"
+assert_not_contains "$OUTPUT_FILE" "GitHub Desktop"
+assert_not_contains "$OUTPUT_FILE" "Visual Studio Code"
+assert_not_contains "$OUTPUT_FILE" "Google Chrome"
 
 CSV_FILE="$EXPORT_DIR/installed_apps.csv"
 MD_FILE="$EXPORT_DIR/installed_apps.md"
