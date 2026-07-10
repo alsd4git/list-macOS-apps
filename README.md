@@ -34,6 +34,10 @@ The script does not install dependencies automatically. If a command is not avai
 - `--output-dir DIR`: Write export files into `DIR`.
 - `--help`: Print usage information.
 
+For a reproducible inventory of a mounted volume or a test fixture, set
+`APPLICATIONS_DIRS` to a colon-separated list of folders. When it is unset,
+the script scans `/Applications` and `~/Applications` as usual.
+
 ## Output model
 
 All output formats are generated from a single internal inventory model so app names with spaces, Mac App Store entries, and manual-app deduplication stay consistent across console output and exports.

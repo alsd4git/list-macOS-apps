@@ -23,6 +23,9 @@ Options:
   --export-json     Export the collected inventory to installed_apps.json.
   --output-dir DIR  Write export files into DIR.
   --help            Show this help message.
+
+Environment:
+  APPLICATIONS_DIRS  Optional colon-separated application directories to scan.
 EOF
 }
 
@@ -171,12 +174,25 @@ collect_mas_apps() {
 }
 
 collect_manual_apps() {
-  local app_path app_name normalized_name
+  local app_path app_name normalized_name configured_paths
   local -a search_paths
 
   search_paths=()
-  [[ -d "/Applications" ]] && search_paths+=("/Applications")
-  [[ -d "${HOME}/Applications" ]] && search_paths+=("${HOME}/Applications")
+  configured_paths="${APPLICATIONS_DIRS:-}"
+  if [[ -n "$configured_paths" ]]; then
+    local IFS=":"
+    read -r -a search_paths <<< "$configured_paths"
+  else
+    [[ -d "/Applications" ]] && search_paths+=("/Applications")
+    [[ -d "${HOME}/Applications" ]] && search_paths+=("${HOME}/Applications")
+  fi
+
+  # Ignore empty or missing paths, including a trailing ':' in APPLICATIONS_DIRS.
+  local -a existing_paths=()
+  for app_path in "${search_paths[@]}"; do
+    [[ -d "$app_path" ]] && existing_paths+=("$app_path")
+  done
+  search_paths=("${existing_paths[@]}")
 
   if [[ ${#search_paths[@]} -eq 0 ]]; then
     echo "Warning: skipping manual applications because no Applications directories were found." >&2

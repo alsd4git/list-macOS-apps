@@ -83,6 +83,7 @@ if [[ "$1" == "list" ]]; then
   cat <<'OUT'
 497799835 Xcode (26.3)
 6753110395 Folder Quick Look (1.6)
+1234567890 Scoop "Quote" | Pipe (2.4)
 OUT
   exit 0
 fi
@@ -93,13 +94,15 @@ EOF
 
 chmod +x "$MOCK_BIN/brew" "$MOCK_BIN/mas"
 
-touch "$APPLICATIONS_DIR/Visual Studio Code.app"
-touch "$APPLICATIONS_DIR/GitHub Desktop.app"
-touch "$APPLICATIONS_DIR/Google Chrome.app"
-touch "$APPLICATIONS_DIR/Xcode.app"
-touch "$APPLICATIONS_DIR/OrbStack.app"
-touch "$HOME_DIR/Applications/Folder Quick Look.app"
-touch "$HOME_DIR/Applications/T3 Code (Alpha).app"
+mkdir -p \
+  "$APPLICATIONS_DIR/Visual Studio Code.app" \
+  "$APPLICATIONS_DIR/GitHub Desktop.app" \
+  "$APPLICATIONS_DIR/Google Chrome.app" \
+  "$APPLICATIONS_DIR/Xcode.app" \
+  "$APPLICATIONS_DIR/OrbStack.app" \
+  "$HOME_DIR/Applications/Folder Quick Look.app" \
+  "$HOME_DIR/Applications/T3 Code (Alpha).app" \
+  "$HOME_DIR/Applications/Manual \"Quote\" | Pipe.app"
 
 fail() {
   echo "FAIL: $1" >&2
@@ -135,6 +138,7 @@ OUTPUT_FILE="$TEST_ROOT/output.txt"
 env \
   PATH="$MOCK_BIN:/usr/bin:/bin" \
   HOME="$HOME_DIR" \
+  APPLICATIONS_DIRS="$APPLICATIONS_DIR:$HOME_DIR/Applications" \
   "$SCRIPT_PATH" --with-formulae --export-csv --export-md --export-json --output-dir "$EXPORT_DIR" \
   > "$OUTPUT_FILE"
 
@@ -143,8 +147,10 @@ assert_contains "$OUTPUT_FILE" "=== Homebrew (Cask) Apps ==="
 assert_contains "$OUTPUT_FILE" "=== Mac App Store Apps ==="
 assert_contains "$OUTPUT_FILE" "=== Manually Installed Apps ==="
 assert_contains "$OUTPUT_FILE" "Folder Quick Look              v1.6"
+assert_contains "$OUTPUT_FILE" "Scoop \"Quote\" | Pipe           v2.4"
 assert_contains "$OUTPUT_FILE" "OrbStack"
 assert_contains "$OUTPUT_FILE" "T3 Code (Alpha)"
+assert_contains "$OUTPUT_FILE" "Manual \"Quote\" | Pipe"
 assert_not_contains "$OUTPUT_FILE" "6753110395"
 assert_not_contains "$OUTPUT_FILE" "GitHub Desktop"
 assert_not_contains "$OUTPUT_FILE" "Visual Studio Code"
@@ -155,15 +161,21 @@ MD_FILE="$EXPORT_DIR/installed_apps.md"
 JSON_FILE="$EXPORT_DIR/installed_apps.json"
 
 assert_contains "$CSV_FILE" "\"Mac App Store Apps\",\"Folder Quick Look\",\"1.6\""
+assert_contains "$CSV_FILE" "\"Mac App Store Apps\",\"Scoop \"\"Quote\"\" | Pipe\",\"2.4\""
 assert_contains "$CSV_FILE" "\"Manually Installed Apps\",\"T3 Code (Alpha)\",\"\""
+assert_contains "$CSV_FILE" "\"Manually Installed Apps\",\"Manual \"\"Quote\"\" | Pipe\",\"\""
 assert_not_contains "$CSV_FILE" "\"Mac App Store Apps\",\"6753110395\""
 
 assert_contains "$MD_FILE" "| Folder Quick Look | 1.6 |"
+assert_contains "$MD_FILE" "| Scoop \"Quote\" \\| Pipe | 2.4 |"
 assert_contains "$MD_FILE" "| T3 Code (Alpha) |  |"
+assert_contains "$MD_FILE" "| Manual \"Quote\" \\| Pipe |  |"
 assert_not_contains "$MD_FILE" "| 6753110395 |"
 
 assert_contains "$JSON_FILE" "\"type\":\"Mac App Store Apps\""
 assert_contains "$JSON_FILE" "\"app\":\"Folder Quick Look\""
+assert_contains "$JSON_FILE" "\"app\":\"Scoop \\\"Quote\\\" | Pipe\""
 assert_contains "$JSON_FILE" "\"app\":\"T3 Code (Alpha)\""
+assert_contains "$JSON_FILE" "\"app\":\"Manual \\\"Quote\\\" | Pipe\""
 
 echo "All tests passed."
