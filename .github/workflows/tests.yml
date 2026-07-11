@@ -1,0 +1,25 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shell tooling
+        run: brew install shellcheck shfmt
+      - name: Check syntax
+        run: bash -n list-installed-apps.sh tests/test-list-installed-apps.sh
+      - name: Run ShellCheck
+        run: shellcheck list-installed-apps.sh tests/test-list-installed-apps.sh
+      - name: Check formatting
+        run: shfmt -d -i 2 -ci -bn list-installed-apps.sh tests/test-list-installed-apps.sh
+      - name: Run tests
+        run: bash tests/test-list-installed-apps.sh

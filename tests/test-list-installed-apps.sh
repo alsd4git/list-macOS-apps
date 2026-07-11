@@ -18,7 +18,7 @@ trap cleanup EXIT
 
 mkdir -p "$MOCK_BIN" "$HOME_DIR/Applications" "$APPLICATIONS_DIR" "$EXPORT_DIR"
 
-cat > "$MOCK_BIN/brew" <<'EOF'
+cat >"$MOCK_BIN/brew" <<'EOF'
 #!/bin/bash
 set -euo pipefail
 
@@ -75,7 +75,7 @@ echo "unexpected brew args: $*" >&2
 exit 1
 EOF
 
-cat > "$MOCK_BIN/mas" <<'EOF'
+cat >"$MOCK_BIN/mas" <<'EOF'
 #!/bin/bash
 set -euo pipefail
 
@@ -140,7 +140,7 @@ env \
   HOME="$HOME_DIR" \
   APPLICATIONS_DIRS="$APPLICATIONS_DIR:$HOME_DIR/Applications" \
   "$SCRIPT_PATH" --with-formulae --export-csv --export-md --export-json --output-dir "$EXPORT_DIR" \
-  > "$OUTPUT_FILE"
+  >"$OUTPUT_FILE"
 
 assert_contains "$OUTPUT_FILE" "=== Homebrew (Formulae) Packages ==="
 assert_contains "$OUTPUT_FILE" "=== Homebrew (Cask) Apps ==="

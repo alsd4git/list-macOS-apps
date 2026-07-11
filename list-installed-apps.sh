@@ -73,14 +73,14 @@ json_escape() {
 }
 
 add_record() {
-  printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$data_file"
+  printf '%s\t%s\t%s\n' "$1" "$2" "$3" >>"$data_file"
 }
 
 add_known_app() {
   local normalized_name
   normalized_name=$(normalize_name "$1")
   if [[ -n "$normalized_name" ]]; then
-    printf '%s\n' "$normalized_name" >> "$known_apps_file"
+    printf '%s\n' "$normalized_name" >>"$known_apps_file"
   fi
 }
 
@@ -181,7 +181,7 @@ collect_manual_apps() {
   configured_paths="${APPLICATIONS_DIRS:-}"
   if [[ -n "$configured_paths" ]]; then
     local IFS=":"
-    read -r -a search_paths <<< "$configured_paths"
+    read -r -a search_paths <<<"$configured_paths"
   else
     [[ -d "/Applications" ]] && search_paths+=("/Applications")
     [[ -d "${HOME}/Applications" ]] && search_paths+=("${HOME}/Applications")
@@ -234,15 +234,15 @@ export_csv() {
   local csv_file="$OUTPUT_DIR/installed_apps.csv"
   local section_title_value escaped_section escaped_app escaped_version
 
-  printf 'Type,App,Version\n' > "$csv_file"
+  printf 'Type,App,Version\n' >"$csv_file"
 
   while IFS=$'\t' read -r section app version; do
     section_title_value=$(section_title "$section")
     escaped_section=$(csv_escape "$section_title_value")
     escaped_app=$(csv_escape "$app")
     escaped_version=$(csv_escape "$version")
-    printf '"%s","%s","%s"\n' "$escaped_section" "$escaped_app" "$escaped_version" >> "$csv_file"
-  done < "$data_file"
+    printf '"%s","%s","%s"\n' "$escaped_section" "$escaped_app" "$escaped_version" >>"$csv_file"
+  done <"$data_file"
 
   echo "Exported CSV to $csv_file"
 }
@@ -251,19 +251,19 @@ export_markdown() {
   local md_file="$OUTPUT_DIR/installed_apps.md"
   local previous_section="" title escaped_app escaped_version
 
-  printf '# Installed Applications\n' > "$md_file"
+  printf '# Installed Applications\n' >"$md_file"
 
   while IFS=$'\t' read -r section app version; do
     if [[ "$section" != "$previous_section" ]]; then
       title=$(section_title "$section")
-      printf '\n## %s\n| App | Version |\n|------|---------|\n' "$title" >> "$md_file"
+      printf '\n## %s\n| App | Version |\n|------|---------|\n' "$title" >>"$md_file"
       previous_section="$section"
     fi
 
     escaped_app=$(md_escape "$app")
     escaped_version=$(md_escape "$version")
-    printf '| %s | %s |\n' "$escaped_app" "$escaped_version" >> "$md_file"
-  done < "$data_file"
+    printf '| %s | %s |\n' "$escaped_app" "$escaped_version" >>"$md_file"
+  done <"$data_file"
 
   echo "Exported Markdown to $md_file"
 }
@@ -272,7 +272,7 @@ export_json() {
   local json_file="$OUTPUT_DIR/installed_apps.json"
   local first=true escaped_section escaped_app escaped_version
 
-  printf '[\n' > "$json_file"
+  printf '[\n' >"$json_file"
 
   while IFS=$'\t' read -r section app version; do
     escaped_section=$(json_escape "$(section_title "$section")")
@@ -282,14 +282,14 @@ export_json() {
     if [[ "$first" == true ]]; then
       first=false
     else
-      printf ',\n' >> "$json_file"
+      printf ',\n' >>"$json_file"
     fi
 
     printf '  {"type":"%s","app":"%s","version":"%s"}' \
-      "$escaped_section" "$escaped_app" "$escaped_version" >> "$json_file"
-  done < "$data_file"
+      "$escaped_section" "$escaped_app" "$escaped_version" >>"$json_file"
+  done <"$data_file"
 
-  printf '\n]\n' >> "$json_file"
+  printf '\n]\n' >>"$json_file"
   echo "Exported JSON to $json_file"
 }
 
