@@ -2,6 +2,9 @@
 
 CLI script to inventory installed macOS apps across Homebrew, Mac App Store, and local Applications folders.
 
+[![Tests](https://github.com/alsd4git/list-macOS-apps/actions/workflows/tests.yml/badge.svg)](https://github.com/alsd4git/list-macOS-apps/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+
 ## Features
 
 - Lists Homebrew casks.
@@ -22,7 +25,15 @@ The script does not install dependencies automatically. If a command is not avai
 ## Usage
 
 ```bash
+git clone https://github.com/alsd4git/list-macOS-apps.git
+cd list-macOS-apps
 ./list-installed-apps.sh [options]
+```
+
+For example, export the complete inventory as Markdown and JSON:
+
+```bash
+./list-installed-apps.sh --with-formulae --export-md --export-json --output-dir ./inventory
 ```
 
 ## Options
