@@ -2,7 +2,7 @@
 
 CLI script to inventory installed macOS apps across Homebrew, Mac App Store, and local Applications folders.
 
-[![Tests](https://github.com/alsd4git/list-macOS-apps/actions/workflows/tests.yml/badge.svg)](https://github.com/alsd4git/list-macOS-apps/actions/workflows/tests.yml)
+[![CI](https://github.com/alsd4git/list-macOS-apps/actions/workflows/tests.yml/badge.svg)](https://github.com/alsd4git/list-macOS-apps/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 ## Features
