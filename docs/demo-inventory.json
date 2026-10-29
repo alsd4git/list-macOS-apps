@@ -1,0 +1,10 @@
+[
+  {"type":"Homebrew (Cask) Apps","app":"firefox","version":"135.0"},
+  {"type":"Homebrew (Cask) Apps","app":"iterm2","version":"3.5.11"},
+  {"type":"Homebrew (Formulae) Packages","app":"jq","version":"1.8.0"},
+  {"type":"Homebrew (Formulae) Packages","app":"ripgrep","version":"14.1.0"},
+  {"type":"Manually Installed Apps","app":"Acme Sketch","version":""},
+  {"type":"Manually Installed Apps","app":"Local Utility","version":""},
+  {"type":"Mac App Store Apps","app":"Keynote","version":"14.4"},
+  {"type":"Mac App Store Apps","app":"Pages","version":"14.4"}
+]
