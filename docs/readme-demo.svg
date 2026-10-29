@@ -3,7 +3,7 @@
   <desc id="desc">Output from list-installed-apps.sh using fake package manager commands and temporary app bundles.</desc>
   <rect width="100%" height="100%" rx="12" fill="#17191c"/>
   <circle cx="24" cy="22" r="6" fill="#ff5f57"/><circle cx="44" cy="22" r="6" fill="#febc2e"/><circle cx="64" cy="22" r="6" fill="#28c840"/>
-  <g font-family="SFMono-Regular, Consolas, monospace"><text x="24" y="43" fill="#a8e6a3" font-size="15">=== Homebrew (Formulae) Packages ===</text>
+  <g font-family="SFMono-Regular, Consolas, monospace" xml:space="preserve"><text x="24" y="43" fill="#a8e6a3" font-size="15">=== Homebrew (Formulae) Packages ===</text>
 <text x="24" y="66" fill="#e7e7e7" font-size="15">jq                             v1.8.0</text>
 <text x="24" y="89" fill="#e7e7e7" font-size="15">ripgrep                        v14.1.0</text>
 <text x="24" y="112" fill="#e7e7e7" font-size="15"></text>

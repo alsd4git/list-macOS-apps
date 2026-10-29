@@ -94,7 +94,7 @@ svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{heigh
   <desc id="desc">Output from list-installed-apps.sh using fake package manager commands and temporary app bundles.</desc>
   <rect width="100%" height="100%" rx="12" fill="#17191c"/>
   <circle cx="24" cy="22" r="6" fill="#ff5f57"/><circle cx="44" cy="22" r="6" fill="#febc2e"/><circle cx="64" cy="22" r="6" fill="#28c840"/>
-  <g font-family="SFMono-Regular, Consolas, monospace">{text}</g>
+  <g font-family="SFMono-Regular, Consolas, monospace" xml:space="preserve">{text}</g>
 </svg>
 '''
 svg_path.write_text(svg)
