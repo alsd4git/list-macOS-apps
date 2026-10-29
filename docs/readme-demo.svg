@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="485" viewBox="0 0 760 485" role="img" aria-labelledby="title desc">
+  <title id="title">Synthetic macOS application inventory</title>
+  <desc id="desc">Output from list-installed-apps.sh using fake package manager commands and temporary app bundles.</desc>
+  <rect width="100%" height="100%" rx="12" fill="#17191c"/>
+  <circle cx="24" cy="22" r="6" fill="#ff5f57"/><circle cx="44" cy="22" r="6" fill="#febc2e"/><circle cx="64" cy="22" r="6" fill="#28c840"/>
+  <g font-family="SFMono-Regular, Consolas, monospace"><text x="24" y="43" fill="#a8e6a3" font-size="15">=== Homebrew (Formulae) Packages ===</text>
+<text x="24" y="66" fill="#e7e7e7" font-size="15">jq                             v1.8.0</text>
+<text x="24" y="89" fill="#e7e7e7" font-size="15">ripgrep                        v14.1.0</text>
+<text x="24" y="112" fill="#e7e7e7" font-size="15"></text>
+<text x="24" y="135" fill="#a8e6a3" font-size="15">=== Homebrew (Cask) Apps ===</text>
+<text x="24" y="158" fill="#e7e7e7" font-size="15">firefox                        v135.0</text>
+<text x="24" y="181" fill="#e7e7e7" font-size="15">iterm2                         v3.5.11</text>
+<text x="24" y="204" fill="#e7e7e7" font-size="15"></text>
+<text x="24" y="227" fill="#a8e6a3" font-size="15">=== Mac App Store Apps ===</text>
+<text x="24" y="250" fill="#e7e7e7" font-size="15">Keynote                        v14.4</text>
+<text x="24" y="273" fill="#e7e7e7" font-size="15">Pages                          v14.4</text>
+<text x="24" y="296" fill="#e7e7e7" font-size="15"></text>
+<text x="24" y="319" fill="#a8e6a3" font-size="15">=== Manually Installed Apps ===</text>
+<text x="24" y="342" fill="#e7e7e7" font-size="15">Acme Sketch</text>
+<text x="24" y="365" fill="#e7e7e7" font-size="15">Local Utility</text>
+<text x="24" y="388" fill="#e7e7e7" font-size="15"></text>
+<text x="24" y="411" fill="#e7e7e7" font-size="15">Exported CSV to ./inventory/installed_apps.csv</text>
+<text x="24" y="434" fill="#e7e7e7" font-size="15">Exported Markdown to ./inventory/installed_apps.md</text>
+<text x="24" y="457" fill="#e7e7e7" font-size="15">Exported JSON to ./inventory/installed_apps.json</text></g>
+</svg>
