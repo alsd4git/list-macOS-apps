@@ -1,6 +1,6 @@
 # list-macOS-apps
 
-Inventory macOS applications from Homebrew, the Mac App Store, and local Applications folders. Print one sorted list or export the same inventory to CSV, Markdown, and JSON.
+Inventory macOS applications from Homebrew, the Mac App Store, and local Applications folders. Print a sorted inventory or export it to CSV, Markdown, and JSON.
 
 [![CI](https://github.com/alsd4git/list-macOS-apps/actions/workflows/tests.yml/badge.svg)](https://github.com/alsd4git/list-macOS-apps/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)

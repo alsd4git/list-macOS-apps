@@ -8,11 +8,11 @@ trap 'rm -rf "$DEMO_ROOT"' EXIT
 
 MOCK_BIN="$DEMO_ROOT/bin"
 APPLICATIONS_DIR="$DEMO_ROOT/Applications"
-HOME_DIR="$DEMO_ROOT/home"
+SECOND_APPLICATIONS_DIR="$DEMO_ROOT/SecondApplications"
 EXPORT_DIR="$DEMO_ROOT/exports"
 OUTPUT_FILE="$DEMO_ROOT/output.txt"
 
-mkdir -p "$MOCK_BIN" "$APPLICATIONS_DIR" "$HOME_DIR/Applications" "$EXPORT_DIR"
+mkdir -p "$MOCK_BIN" "$APPLICATIONS_DIR" "$SECOND_APPLICATIONS_DIR" "$EXPORT_DIR"
 
 cat >"$MOCK_BIN/brew" <<'MOCK_BREW'
 #!/bin/bash
@@ -58,12 +58,11 @@ mkdir -p \
   "$APPLICATIONS_DIR/Firefox.app" \
   "$APPLICATIONS_DIR/Pages.app" \
   "$APPLICATIONS_DIR/Acme Sketch.app" \
-  "$HOME_DIR/Applications/Local Utility.app"
+  "$SECOND_APPLICATIONS_DIR/Local Utility.app"
 
 env \
   PATH="$MOCK_BIN:/usr/bin:/bin" \
-  HOME="$HOME_DIR" \
-  APPLICATIONS_DIRS="$APPLICATIONS_DIR:$HOME_DIR/Applications" \
+  APPLICATIONS_DIRS="$APPLICATIONS_DIR:$SECOND_APPLICATIONS_DIR" \
   "$REPO_ROOT/list-installed-apps.sh" \
     --with-formulae --export-csv --export-md --export-json \
     --output-dir "$EXPORT_DIR" >"$OUTPUT_FILE"
