@@ -48,6 +48,8 @@ The command prints each section to the terminal and writes `installed_apps.csv`,
 
 This preview comes from the real script with synthetic `.app` directories and mocked `brew` and `mas` commands. It does not contain a scan of a real Mac. Regenerate it with `./scripts/generate-readme-demo.sh`.
 
+Regeneration requires Python 3 for the SVG renderer; it uses only the standard library.
+
 ![Terminal output from a synthetic inventory](docs/readme-demo.svg)
 
 The matching synthetic JSON export is available at [docs/demo-inventory.json](docs/demo-inventory.json).
